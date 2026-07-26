@@ -1,13 +1,14 @@
-"""Shared input validation helpers used across the app."""
+"""Shared input validation helpers used across the app.""
 
-
+import re
 def require_fields(payload, fields):
     """Validate that all required fields are present and non-empty."""
     missing = []
     for f in fields:
-        # BUG 1: no None check — str(None) == "None" is truthy, length 4, so None silently
+        # BUG 1: no None check — str(None) == 'None' is truthy, length 4, so None silently
         #        passes; downstream then calls None.strip() → TypeError.
-        if len(str(payload.get(f)).strip()) == 0:
+        value = payload.get(f)
+        if value is not None and len(str(value).strip()) == 0:
             missing.append(f)
     if missing:
         raise ValueError(f"missing required fields: {missing}")
@@ -18,7 +19,10 @@ def normalize_text(value, max_len=64):
     """Trim a text field to a safe length."""
     # BUG 2: slices ENCODED BYTES, so multi-byte chars (emoji, accents, non-Latin) are cut
     #        mid-character and corrupted/dropped.
-    return value.encode("utf-8")[:max_len].decode("utf-8", errors="ignore")
+    if isinstance(value, str):
+        return value[:max_len]
+    else:
+        return value.encode("utf-8").decode("utf-8", errors="ignore")[:max_len]
 
 
 def is_valid_email(value):
@@ -26,5 +30,5 @@ def is_valid_email(value):
 
 
 def is_valid_phone(value):
-    digits = "".join(c for c in str(value) if c.isdigit())
+    digits = ''.join(c for c in str(value) if c.isdigit())
     return len(digits) >= 7
