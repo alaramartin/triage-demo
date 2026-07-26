@@ -5,9 +5,10 @@ def require_fields(payload, fields):
     """Validate that all required fields are present and non-empty."""
     missing = []
     for f in fields:
-        # BUG 1: no None check — str(None) == "None" is truthy, length 4, so None silently
-        #        passes; downstream then calls None.strip() → TypeError.
-        if len(str(payload.get(f)).strip()) == 0:
+        # Add None guard — str(None) == "None" is truthy, length 4, so None silently
+        # passes; downstream then calls None.strip() → TypeError.
+        value = payload.get(f)
+        if value is None or len(str(value).strip()) == 0:
             missing.append(f)
     if missing:
         raise ValueError(f"missing required fields: {missing}")
@@ -16,9 +17,9 @@ def require_fields(payload, fields):
 
 def normalize_text(value, max_len=64):
     """Trim a text field to a safe length."""
-    # BUG 2: slices ENCODED BYTES, so multi-byte chars (emoji, accents, non-Latin) are cut
-    #        mid-character and corrupted/dropped.
-    return value.encode("utf-8")[:max_len].decode("utf-8", errors="ignore")
+    # Normalize unicode before length checks.
+    value = value.encode("utf-8", errors="ignore").decode("utf-8")
+    return value[:max_len]
 
 
 def is_valid_email(value):
