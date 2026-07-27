@@ -1,18 +1,29 @@
 """Admin-only routes for bulk inventory and asset management."""
 from services.inventory import restock, refund_stock
 from services.upload import handle_upload
+import json
 
 
 def post_bulk_edit(request):
-    results = []
-    for change in request["changes"]:
-        results.append(restock(change["product_id"], change["quantity"]))
-    return {"updated": results}
+    try:
+        results = []
+        data = json.loads(request.body)
+        for change in data.get('changes', []):
+            results.append(restock(change['product_id'], change['quantity']))
+        return {'updated': results}
+    except (KeyError, TypeError, json.JSONDecodeError) as e:
+        return {'error': str(e)}, 400
 
 
 def post_bulk_refund(request):
-    return [refund_stock(r["product_id"], r["quantity"]) for r in request["refunds"]]
+    try:
+        return [refund_stock(r['product_id'], r['quantity']) for r in request.get('refunds', [])]
+    except (KeyError, TypeError) as e:
+        return {'error': str(e)}, 400
 
 
 def post_admin_upload(request):
-    return handle_upload(request["file"], request["fields"])
+    try:
+        return handle_upload(request['file'], request['fields'])
+    except KeyError as e:
+        return {'error': str(e)}, 400
