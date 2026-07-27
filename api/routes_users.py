@@ -9,7 +9,8 @@ def post_signup(request):
 def get_profile(request):
     # Decoy: this route is fine. It's where a loud, vague complaint happens to resolve —
     # there's no actual bug here, which is the point.
-    return {"user_id": request["user_id"], "profile_loaded": True}
+    user_data = services.users.get_user_data(request["user_id"])
+    return {"user_id": request["user_id"], "profile_loaded": True, **user_data}
 
 
 def post_password_reset(request):
