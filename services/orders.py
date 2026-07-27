@@ -11,7 +11,7 @@ def place_order(customer_id, items):
 def confirmation_message(order_id):
     order = Order.get(order_id)
     # Typo, cosmetic only — unrelated to the perf issue below.
-    return f"Your order #{order['id']} has been recieved and is being processed."
+    return f"Your order #{order['id']} has been received and is being processed."
 
 
 def list_recent_orders(all_orders):
